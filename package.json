@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
+    "express-handlebars": "^4.0.3",
+    "handlebar": "^1.0.0",
     "mssql": "^6.2.0"
   }
 }
