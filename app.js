@@ -59,10 +59,10 @@ app.get('/schools', (req, res)=> {
         var request = new sql.Request();
            
         // request.query(query, function (err, recordset) {
-        request.input('GPA',sql.Decimal,req.query.GPA)
+        request.input('GPA',sql.Float,req.query.GPA)
         request.input('Gender',sql.NVarChar,req.query.gender)
         request.input('IsFirstApplicant',sql.Bit,req.query.isFirstApplicant)
-        request.input('GradYear',sql.Int,req.query.GPA)
+        request.input('GradYear',sql.Int,req.query.gradYear)
         request.input('HighSchool',sql.NVarChar,req.query.highSchool)
         request.input('StdTestType',sql.NVarChar,req.query.stdTestType)
         request.input('StdTestScore',sql.Int,req.query.stdTestScore)
