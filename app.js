@@ -11,7 +11,7 @@ const session=require("express-session")
 bodyParser = require('body-parser').json();
 var cors = require('cors');
 var corsOptions = {
-    origin: 'http://localhost:8080',
+    // origin: 'http://localhost:8080',
     credentials: true };
 
 app.use(cors(corsOptions));
