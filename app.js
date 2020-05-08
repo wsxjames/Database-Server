@@ -51,7 +51,7 @@ app.set('view engine','handlebars')
 
 
 
-app.get('/',(req,res)=>{
+app.get('/',isLoggedIn,(req,res)=>{
     // res.sendStatus(200)
 })
 
