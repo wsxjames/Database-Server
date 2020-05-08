@@ -11,10 +11,10 @@ const session=require("express-session")
 bodyParser = require('body-parser').json();
 var cors = require('cors');
 var corsOptions = {
-    origin: 'http://wu-uni-app.s3-website.us-east-2.amazonaws.com/',
+    origin: 'http://localhost:8080',
     credentials: true };
 
-// app.use(cors(corsOptions));
+app.use(cors(corsOptions));
 const config = {
   user: 'wus4',
   password: 'wushixinJames34',
@@ -34,11 +34,11 @@ app.use(flash()); // use connect-flash for flash messages stored in session
 
 
 
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", *); // update to match the domain you will make the request from
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-  });
+// app.use(function(req, res, next) {
+//     res.header("Access-Control-Allow-Origin", "http://localhost:8080"); // update to match the domain you will make the request from
+//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+//     next();
+//   });
 
 
 
@@ -51,7 +51,7 @@ app.set('view engine','handlebars')
 
 
 
-app.get('/',isLoggedIn,(req,res)=>{
+app.get('/',(req,res)=>{
     // res.sendStatus(200)
 })
 
