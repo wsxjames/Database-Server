@@ -178,6 +178,7 @@ app.post('/updateProfile',  bodyParser, async (req, res)=> {
       //     res.sendStatus(200)
           
       // })
+      request.query("update person set FirstName='"+req.body.firstName+"', LastName='"+req.body.lastName+"' where Username='"+req.body.username+"'")
 
       console.log(req.body)
      
