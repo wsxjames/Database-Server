@@ -11,9 +11,9 @@ const session=require("express-session")
 bodyParser = require('body-parser').json();
 var cors = require('cors');
 var corsOptions = {
-    // origin: 'http://localhost:8080',
+    origin: 'http://localhost:8080',
     // origin: 'http://wu-uni-app.s3-website.us-east-2.amazonaws.com',
-    origin: 'http://uni-app-client.csse.rose-hulman.edu',
+    // origin: 'http://uni-app-client.csse.rose-hulman.edu',
     credentials: true };
 
 app.use(cors(corsOptions));
@@ -36,11 +36,27 @@ app.use(flash()); // use connect-flash for flash messages stored in session
 
 
 
+
+permittedLinker = ['localhost', '127.0.0.1'];  // who can link here?
+
 // app.use(function(req, res, next) {
-//     res.header("Access-Control-Allow-Origin", "http://localhost:8080"); // update to match the domain you will make the request from
-//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-//     next();
-//   });
+//   var i=0, notFound=1, referer=req.get('Referer');
+
+//   // if ((req.path==='/') || (req.path==='')) next(); // pass calls to '/' always
+
+//   if (referer){
+//       while ((i<permittedLinker.length) && notFound){
+//       notFound= (referer.indexOf(permittedLinker[i])===-1);
+//       i++;
+//       }
+//   }
+
+//   if (notFound) { 
+//      res.status(403).send('Protected area. Please enter website via www.mysite.com');
+//   } else {
+//     next(); // access is permitted, go to the next step in the ordinary routing
+//   }
+// });
 
 
 
@@ -77,7 +93,7 @@ app.get('/schools',(req, res)=> {
         request.input('ActivityType',sql.NVarChar,req.query.activityType)
         request.input('CompRank',sql.NVarChar,req.query.compRank)
         // request.input()
-        request.execute("[dbo].[ReadUniversities]", function (err, recordset) {
+        request.execute("[dbo].[ReadUniversities]",  (err, recordset) =>{
             if (err) console.log(err)
 
             // send records as a responses
@@ -88,16 +104,20 @@ app.get('/schools',(req, res)=> {
     })
 })
 
-app.get('/studentprofile',  (req, res)=> {
+app.get('/studentprofile', isLoggedIn, (req, res)=> {
   sql.connect(config, (err)=> {
   
       if (err) console.log(err);
       var request = new sql.Request();
-      request.query("select * from person where username='"+req.user.Username+"'", function (err, recordset) {
+      console.log(req.user.PID)
+      request.input('PID',sql.Int,req.user.PID)
+      request.execute("[dbo].[ReadApplicantRecord]",  (err, recordset)=>{
+      // request.query("select * from person where PID="+req.user.PID, function (err, recordset) {
+        console.log(recordset)
           if (err) console.log(err)
 
           // send records as a responses
-          console.log(recordset)
+          // console.log(recordset)
           res.send(recordset);
           
       })
@@ -124,65 +144,65 @@ app.get('/students', (req, res)=> {
 //  console.log('API listening on port='+port);
 //});
 
-app.post('/register',  bodyParser, async (req, res)=> {
-  try {
-    const hashedPassword=await bcrypt.hash(req.body.password,10)
-    sql.connect(config, (err)=> {
-    
-      if (err) console.log(err);
-      var request = new sql.Request();
-      request.input('Email_6',sql.NVarChar,req.body.email)
-      request.input('FirstName_2',sql.NVarChar,req.body.firstName)
-      request.input('LastName_3',sql.NVarChar,req.body.lastName)
-      request.input('UserName_4',sql.NVarChar,req.body.userName)
-      request.input('Password_5',sql.Text,hashedPassword)
-      request.input('PasswordSeed_7',sql.Text,'null')
-      // request.input()
-      request.execute("[dbo].[Create_Person]", function (err, recordset) {
-          if (err) console.log(err)
-
-          // send records as a responses
-          res.sendStatus(200)
-          
-      })
-     
-    })
-  } catch (error) {
-    
+app.post('/register', bodyParser, passport.authenticate('local-signup', {
+  successMessage:'success',
+  failureMessage:'fail',
+  failureFlash : true // allow flash messages
+}),
+function(req, res) {
+  console.log("hello");
+  // req.session.save()
+  if (req.body.remember) {
+    req.session.cookie.maxAge = 10000 * 60 * 3;
+  } else {
+    req.session.cookie.expires = false;
   }
-})
+  if(req.user) res.sendStatus(200);
+  else res.sendStatus(401);
+  
+});
+
 
 app.post('/updateProfile',  bodyParser, async (req, res)=> {
   try {
-    const hashedPassword=await bcrypt.hash(req.body.password,10)
+    var hashedPassword=''
+    if(req.body.password=='') hashedPassword=req.body.oldPassword
+    else hashedPassword=await bcrypt.hash(req.body.password,10)
     sql.connect(config, (err)=> {
     
       if (err) console.log(err);
       var request = new sql.Request();
-      // request.input('Email_6',sql.NVarChar,req.body.email)
-      // request.input('FirstName_2',sql.NVarChar,req.body.firstName)
-      // request.input('LastName_3',sql.NVarChar,req.body.lastName)
-      // request.input('UserName_4',sql.NVarChar,req.body.userName)
-      // request.input('Password_5',sql.Text,hashedPassword)
-      // request.input('PasswordSeed_7',sql.Text,'null')
-      // // request.input()
-      // request.execute("[dbo].[Create_Person]", function (err, recordset) {
-      //     if (err) console.log(err)
+      request.input('PID',sql.Int,req.user.PID)
+      request.input('Username',sql.NVarChar,req.user.Username)
+      request.input('FirstName',sql.NVarChar,req.body.firstName)
+      request.input('LastName',sql.NVarChar,req.body.lastName)
+      request.input('Email',sql.NVarChar,req.body.email)
+      request.input('Password',sql.Text,hashedPassword)
+      request.input('Gender',sql.NVarChar,req.body.gender)
+      request.input('HighSchool',sql.NVarChar,req.body.highSchool)
+      request.input('GradYear',sql.Int,req.body.gradYear)
+      request.input('GPA',sql.Decimal,req.body.GPA)
+      request.input('StdTestType',sql.NVarChar,req.body.stdTestType)
+      request.input('StdTestGrade',sql.Int,req.body.stdGrade)
+      request.input('StdTestLocation',sql.NVarChar, "")
+      request.input('StdTestDate',sql.Date,"2010-01-01")
+      request.input('ActivityType',sql.NVarChar,req.body.activityType)
+      request.input('ActivityName',sql.NVarChar,req.body.activityName)
+      request.input('University',sql.NVarChar,req.body.universityName)
+      request.input('ActivityStartDate',sql.NVarChar,null)
+      request.input('ActivityEndDate',sql.NVarChar,null)
+      request.input('SpecialAttributes',sql.NVarChar,'')
 
-      //     // send records as a responses
-      //     res.sendStatus(200)
-          
-      // })
-      // request.execute("[dbo].[Create_Person]", function (err, recordset) {
-      //     if (err) console.log(err)
+      request.execute("[dbo].[UpdateStudentUser]", (err, recordset)=> {
+        if (err) console.log(err)
 
-      //     // send records as a responses
-      //     res.sendStatus(200)
-          
-      // })
-      request.query("update person set FirstName='"+req.body.firstName+"', LastName='"+req.body.lastName+"' where Username='"+req.body.username+"'")
+        // send records as a responses
+        res.sendStatus(200)
+        
+    })
 
-      console.log(req.body)
+
+      // console.log(req.body)
      
     })
   } catch (error) {
@@ -219,23 +239,41 @@ app.post('/login', bodyParser, passport.authenticate('local-login', {
   failureFlash : true // allow flash messages
 }),
 function(req, res) {
-  console.log("hello");
+  // console.log("hello");
   // req.session.save()
   if (req.body.remember) {
-    req.session.cookie.maxAge = 1000 * 60 * 3;
+    req.session.cookie.maxAge = 10000 * 60 * 3;
   } else {
     req.session.cookie.expires = false;
   }
   if(req.user) res.sendStatus(200);
   else res.sendStatus(401);
   
-});
+})
 
 app.get('/logout', isLoggedIn, function(req, res) {
   req.logout();
   req.session.destroy()
   // res.sendStatus(200)
-});
+})
+
+app.get('/alluniversities', (req, res)=> {
+  sql.connect(config, (err)=> {
+    
+    if (err) console.log(err);
+    var request = new sql.Request();
+       
+    request.query("select University.SID, name from University JOIN School on University.SID=School.SID",  (err, recordset) =>{
+    // request.execute("[dbo].[ReadUniversities]",  (err, recordset) =>{
+        if (err) console.log(err)
+
+        // send records as a responses
+        res.send(recordset);
+        
+    })
+   
+})
+})
 
 
 function isLoggedIn(req, res, next) {
@@ -244,7 +282,7 @@ function isLoggedIn(req, res, next) {
 	if (req.isAuthenticated()){
     console.log("Authorized")
     
-    res.sendStatus(200)
+    // res.sendStatus(200)
 		return next();
   }
 
