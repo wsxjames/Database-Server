@@ -51,7 +51,7 @@ app.use(flash()); // use connect-flash for flash messages stored in session
 
 
 
-permittedLinker = ['localhost', '127.0.0.1'];  // who can link here?
+permittedLinker = ['localhost', '127.0.0.1','http://uni-app-client.csse.rose-hulman.edu'];  // who can link here?
 
 app.use(function(req, res, next) {
   var i=0, notFound=1, referer=req.get('Referer');
