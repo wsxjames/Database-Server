@@ -6,6 +6,7 @@ const sql = require("mssql");
 const bcrypt=require("bcrypt")
 const passport=require('passport')
 require('./passport')(passport); // pass passport for configuration
+const dbconfig=require('./db')
 const flash=require("express-flash")
 const session=require("express-session")
 bodyParser = require('body-parser').json();
@@ -17,12 +18,25 @@ var corsOptions = {
     credentials: true };
 
 app.use(cors(corsOptions));
-const config = {
-  user: 'wus4',
-  password: 'wushixinJames34',
-  server: 'golem.csse.rose-hulman.edu', 
-  database: '_S1G8UniAppSys' 
-};
+// const config = {
+//   user: 'jw19',
+//   password: 'Password123',
+//   server: 'golem.csse.rose-hulman.edu', 
+//   database: '_S1G8UniAppSys_02' 
+// };
+
+// const config = {
+//   user: 'wus4',
+//   password: 'wushixinJames34',
+//   server: 'golem.csse.rose-hulman.edu', 
+//   database: '_S1G8UniAppSys' 
+// };
+let result= bcrypt.compare('wushixinJames34',dbconfig.password)
+if (result){
+  dbconfig.password='wushixinJames34'
+}else console.log("password wrong")
+
+const config=dbconfig
 
 app.use(session({
 	secret: 'vidyapathaisalwaysrunning',
@@ -39,24 +53,24 @@ app.use(flash()); // use connect-flash for flash messages stored in session
 
 permittedLinker = ['localhost', '127.0.0.1'];  // who can link here?
 
-// app.use(function(req, res, next) {
-//   var i=0, notFound=1, referer=req.get('Referer');
+app.use(function(req, res, next) {
+  var i=0, notFound=1, referer=req.get('Referer');
 
-//   // if ((req.path==='/') || (req.path==='')) next(); // pass calls to '/' always
+  // if ((req.path==='/') || (req.path==='')) next(); // pass calls to '/' always
 
-//   if (referer){
-//       while ((i<permittedLinker.length) && notFound){
-//       notFound= (referer.indexOf(permittedLinker[i])===-1);
-//       i++;
-//       }
-//   }
+  if (referer){
+      while ((i<permittedLinker.length) && notFound){
+      notFound= (referer.indexOf(permittedLinker[i])===-1);
+      i++;
+      }
+  }
 
-//   if (notFound) { 
-//      res.status(403).send('Protected area. Please enter website via www.mysite.com');
-//   } else {
-//     next(); // access is permitted, go to the next step in the ordinary routing
-//   }
-// });
+  if (notFound) { 
+     res.status(403).send('Protected area. Please enter website via www.mysite.com');
+  } else {
+    next(); // access is permitted, go to the next step in the ordinary routing
+  }
+});
 
 
 
@@ -131,7 +145,7 @@ app.get('/students', (req, res)=> {
       if (err) console.log(err);
       var request = new sql.Request();
       request.input('University',sql.NVarChar,req.query.university)
-      request.execute("[dbo].[ReadStudentByUniversitySec]", function (err, recordset) {
+      request.execute("[dbo].[ReadStudentByUniversityInit]", function (err, recordset) {
           if (err) console.log(err)
 
           res.send(recordset);
@@ -153,7 +167,7 @@ function(req, res) {
   console.log("hello");
   // req.session.save()
   if (req.body.remember) {
-    req.session.cookie.maxAge = 10000 * 60 * 3;
+    req.session.cookie.maxAge = 999999999999 * 60 * 3;
   } else {
     req.session.cookie.expires = false;
   }
@@ -168,6 +182,7 @@ app.post('/updateProfile',  bodyParser, async (req, res)=> {
     var hashedPassword=''
     if(req.body.password=='') hashedPassword=req.body.oldPassword
     else hashedPassword=await bcrypt.hash(req.body.password,10)
+    let properGrade=req.body.stdGrade/100
     sql.connect(config, (err)=> {
     
       if (err) console.log(err);
@@ -183,7 +198,7 @@ app.post('/updateProfile',  bodyParser, async (req, res)=> {
       request.input('GradYear',sql.Int,req.body.gradYear)
       request.input('GPA',sql.Decimal,req.body.GPA)
       request.input('StdTestType',sql.NVarChar,req.body.stdTestType)
-      request.input('StdTestGrade',sql.Int,req.body.stdGrade)
+      request.input('StdTestGrade',sql.Float,properGrade)
       request.input('StdTestLocation',sql.NVarChar, "")
       request.input('StdTestDate',sql.Date,"2010-01-01")
       request.input('ActivityType',sql.NVarChar,req.body.activityType)
@@ -242,7 +257,7 @@ function(req, res) {
   // console.log("hello");
   // req.session.save()
   if (req.body.remember) {
-    req.session.cookie.maxAge = 10000 * 60 * 3;
+    req.session.cookie.maxAge = 999999999999 * 60 * 3 * 60 * 3;
   } else {
     req.session.cookie.expires = false;
   }
@@ -262,9 +277,10 @@ app.get('/alluniversities', (req, res)=> {
     
     if (err) console.log(err);
     var request = new sql.Request();
-       
-    request.query("select University.SID, name from University JOIN School on University.SID=School.SID",  (err, recordset) =>{
-    // request.execute("[dbo].[ReadUniversities]",  (err, recordset) =>{
+    request.input('type',sql.NVarChar, req.query.type)
+    request.input('isDesc',sql.NVarChar, req.query.isDesc)
+    // request.query("select University.SID, name from University JOIN School on University.SID=School.SID",  (err, recordset) =>{
+    request.execute("[dbo].[getSortedSchoolList]",  (err, recordset) =>{
         if (err) console.log(err)
 
         // send records as a responses
@@ -272,7 +288,33 @@ app.get('/alluniversities', (req, res)=> {
         
     })
    
+  })
 })
+
+app.post('/percentage', bodyParser, (req, res)=> {
+  var stdScore=req.body.stdTestScore/100
+  var firstApplicant=req.body.isFirstApplicant? 1:0
+  sql.connect(config, (err)=> {
+    console.log("body="+JSON.stringify(req.body))
+    if (err) console.log(err);
+    var request = new sql.Request();
+    request.input('Gender',sql.NVarChar, req.body.gender)
+    request.input('IsFirstApplicant',sql.Bit,firstApplicant)
+    request.input('GradYear',sql.Int,req.body.gradYear)
+    request.input('GPA',sql.Float,req.body.GPA)
+    request.input('StdTestType',sql.NVarChar,req.body.stdTestType)
+    request.input('StdTestScore',sql.Float,stdScore)
+    request.input('University',sql.NVarChar,req.body.university)
+    // console.log(request)
+    request.execute("ReadAcceptanceLikelihood",  (err, recordset) =>{
+        if (err) console.log(err)
+      console.log(recordset)
+        // send records as a responses
+        res.send(recordset);
+        
+    })
+   
+  })
 })
 
 
