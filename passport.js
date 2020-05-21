@@ -17,9 +17,9 @@ const dbconfig=require('./db')
 //     server: 'golem.csse.rose-hulman.edu', 
 //     database: '_S1G8UniAppSys' 
 //   };
-let result= bcrypt.compare('wushixinJames34',dbconfig.password)
+let result= bcrypt.compare('Password123',dbconfig.password)
 if (result){
-  dbconfig.password='wushixinJames34'
+  dbconfig.password='Password123'
 }else console.log("password wrong")
 const config=dbconfig
 
