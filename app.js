@@ -12,9 +12,9 @@ const session=require("express-session")
 bodyParser = require('body-parser').json();
 var cors = require('cors');
 var corsOptions = {
-    // origin: 'http://localhost:8080',
+    origin: 'http://localhost:8080',
     // origin: 'http://wu-uni-app.s3-website.us-east-2.amazonaws.com',
-    origin: 'http://uni-app-client.csse.rose-hulman.edu',
+    // origin: 'http://uni-app-client.csse.rose-hulman.edu',
     credentials: true };
 
 app.use(cors(corsOptions));
@@ -31,9 +31,11 @@ app.use(cors(corsOptions));
 //   server: 'golem.csse.rose-hulman.edu', 
 //   database: '_S1G8UniAppSys' 
 // };
-let result= bcrypt.compare('Password123',dbconfig.password)
+// let truePassword='wushixinJames34'
+let truePassword='Password123'
+let result= bcrypt.compare(truePassword,dbconfig.password)
 if (result){
-  dbconfig.password='Password123'
+  dbconfig.password=truePassword
 }else console.log("password wrong")
 
 const config=dbconfig
@@ -53,24 +55,24 @@ app.use(flash()); // use connect-flash for flash messages stored in session
 
 permittedLinker = ['localhost', '127.0.0.1','http://uni-app-client.csse.rose-hulman.edu'];  // who can link here?
 
-app.use(function(req, res, next) {
-  var i=0, notFound=1, referer=req.get('Referer');
+// app.use(function(req, res, next) {
+//   var i=0, notFound=1, referer=req.get('Referer');
 
-  // if ((req.path==='/') || (req.path==='')) next(); // pass calls to '/' always
+//   // if ((req.path==='/') || (req.path==='')) next(); // pass calls to '/' always
 
-  if (referer){
-      while ((i<permittedLinker.length) && notFound){
-      notFound= (referer.indexOf(permittedLinker[i])===-1);
-      i++;
-      }
-  }
+//   if (referer){
+//       while ((i<permittedLinker.length) && notFound){
+//       notFound= (referer.indexOf(permittedLinker[i])===-1);
+//       i++;
+//       }
+//   }
 
-  if (notFound) { 
-     res.status(403).send('Protected area. Please enter website via www.mysite.com');
-  } else {
-    next(); // access is permitted, go to the next step in the ordinary routing
-  }
-});
+//   if (notFound) { 
+//      res.status(403).send('Protected area. Please enter website via www.mysite.com');
+//   } else {
+//     next(); // access is permitted, go to the next step in the ordinary routing
+//   }
+// });
 
 
 
@@ -309,6 +311,39 @@ app.post('/percentage', bodyParser, (req, res)=> {
     request.execute("ReadAcceptanceLikelihood",  (err, recordset) =>{
         if (err) console.log(err)
       console.log(recordset)
+        // send records as a responses
+        res.send(recordset);
+        
+    })
+   
+  })
+})
+
+app.get('/getAllUniversities',(req, res)=> {
+  sql.connect(config, (err)=> {
+    console.log("body="+JSON.stringify(req.body))
+    if (err) console.log(err);
+    var request = new sql.Request();
+    request.execute("SelectAllUniversity",  (err, recordset) =>{
+    // request.query("select School.SID, Name from University join School on University.SID=School.SID ",  (err, recordset) =>{
+        if (err) console.log(err)
+      // console.log(recordset)
+        // send records as a responses
+        res.send(recordset);
+        
+    })
+   
+  })
+})
+
+app.get('/getAllHighSchools',(req, res)=> {
+  sql.connect(config, (err)=> {
+    console.log("body="+JSON.stringify(req.body))
+    if (err) console.log(err);
+    var request = new sql.Request();
+    request.query("SelectAllHighSchool",  (err, recordset) =>{
+        if (err) console.log(err)
+      // console.log(recordset)
         // send records as a responses
         res.send(recordset);
         
