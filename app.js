@@ -101,7 +101,7 @@ app.get('/schools',(req, res)=> {
         request.input('GradYear',sql.Int,req.query.gradYear)
         request.input('HighSchool',sql.NVarChar,req.query.highSchool)
         request.input('StdTestType',sql.NVarChar,req.query.stdTestType)
-        request.input('StdTestScore',sql.Int,req.query.stdTestScore)
+        request.input('StdTestScore',sql.Float,req.query.stdTestScore)
         request.input('TestLocation',sql.NVarChar,req.query.testLocation)
         request.input('TestCity',sql.NVarChar,req.query.testCity)
         request.input('ActivityType',sql.NVarChar,req.query.activityType)
